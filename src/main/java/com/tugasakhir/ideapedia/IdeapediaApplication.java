@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class IdeapediaApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(IdeapediaApplication.class, args);
+		SpringApplication.run(IdeapediaApplication.class, args);  // Menjalankan aplikasi
 	}
 
 }

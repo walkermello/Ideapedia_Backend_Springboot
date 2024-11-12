@@ -1,5 +1,7 @@
 package com.tugasakhir.ideapedia.dto.response;
 
+import java.time.LocalDateTime;
+
 public class RespIdeaDTO {
     private Long id;
     private String judul;
@@ -11,10 +13,19 @@ public class RespIdeaDTO {
     private String fileName;
     private String filePath;
     private String fileImage;
+    private LocalDateTime createdAt;
     private RespUserDTO user;
 
     public Long getId() {
         return id;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public void setId(Long id) {
