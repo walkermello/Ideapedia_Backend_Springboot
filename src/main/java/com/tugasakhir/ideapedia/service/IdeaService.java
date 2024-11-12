@@ -5,11 +5,13 @@ import com.tugasakhir.ideapedia.dto.response.RespIdeaDTO;
 import com.tugasakhir.ideapedia.dto.validasi.ValIdeaDTO;
 import com.tugasakhir.ideapedia.model.History;
 import com.tugasakhir.ideapedia.model.Idea;
+import com.tugasakhir.ideapedia.model.UnitKerja;
 import com.tugasakhir.ideapedia.repo.HistoryRepo;
 import com.tugasakhir.ideapedia.repo.IdeaRepo;
 import com.tugasakhir.ideapedia.repo.UserRepo;
 import com.tugasakhir.ideapedia.model.User;
 import com.tugasakhir.ideapedia.util.GlobalFunction;
+import com.tugasakhir.ideapedia.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
@@ -18,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -48,6 +52,7 @@ public class IdeaService implements IFile<Idea> {
     private UserRepo userRepo;
 
     private final ModelMapper modelMapper = new ModelMapper();
+    private TransformPagination transformPagination = new TransformPagination();
 
     @Value("${file.storage.path}")
     private String fileStoragePath;
@@ -130,6 +135,23 @@ public class IdeaService implements IFile<Idea> {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Gagal menyimpan ide: " + e.getMessage());
         }
+    }
+
+    @Override
+    public ResponseEntity<Object> findAll(Pageable pageable, HttpServletRequest request) {
+        Page<Idea> page = ideaRepo.findAll(pageable);
+        List<Idea> list = page.getContent();
+
+        if (list.isEmpty()) {
+            return GlobalFunction.dataTidakDitemukan(request);
+        }
+
+        return transformPagination.transformObject(
+                new HashMap<>(),
+                convertToListRespIdeaDTO(list),
+                page,
+                null, null
+        );
     }
 
     public ResponseEntity<Resource> downloadFile(Long ideaId, String fileType, HttpServletRequest request) {

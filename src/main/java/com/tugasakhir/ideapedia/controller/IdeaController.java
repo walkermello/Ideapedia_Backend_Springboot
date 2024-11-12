@@ -68,6 +68,12 @@ public class IdeaController {
         return ideaService.saveFile(idea, request, file, image);  // Menggunakan saveFile yang sudah ada
     }
 
+    @GetMapping
+    public ResponseEntity<Object> getDefault(HttpServletRequest request) {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("id"));//ASC
+        return ideaService.findAll(pageable, request);
+    }
+
     @GetMapping("/download/{id}")
     public ResponseEntity<Resource> downloadFile(
             @PathVariable Long id,

@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 @Table(name = "MstUser")
 public class User {
 
+
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -41,7 +43,6 @@ public class User {
 
     @Column(name = "ModifiedBy", columnDefinition = "BIGINT")
     private Long modifiedBy;
-
 
     // Getters and Setters
 
