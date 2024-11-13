@@ -12,6 +12,7 @@ import com.tugasakhir.ideapedia.repo.DetailIdeaRepo;
 import com.tugasakhir.ideapedia.repo.IdeaRepo;
 import com.tugasakhir.ideapedia.repo.UnitKerjaRepo;
 import com.tugasakhir.ideapedia.repo.UserRepo;
+import com.tugasakhir.ideapedia.security.JwtUtility;
 import com.tugasakhir.ideapedia.util.GlobalFunction;
 import com.tugasakhir.ideapedia.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,19 +45,11 @@ public class DetailIdeaService implements IDetail<DetailIdea> {
     @Autowired
     private IdeaRepo ideaRepo;
 
+    @Autowired
+    private JwtUtility jwtUtil;  // Injeksi dependensi jwtUtil
+
     private TransformPagination transformPagination = new TransformPagination();
     private ModelMapper modelMapper = new ModelMapper();
-
-    // Simplify the getCurrentUserId function to avoid unnecessary code
-    public Long getCurrentUserId(HttpServletRequest request) {
-        // Get username from the security context
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String username = (principal instanceof UserDetails) ? ((UserDetails) principal).getUsername() : principal.toString();
-
-        // Find the user by username
-        Optional<User> user = userRepo.findByUsername(username);
-        return user.map(User::getId).orElse(null); // Return user ID if present
-    }
 
     @Override
     @Transactional
@@ -125,6 +118,36 @@ public class DetailIdeaService implements IDetail<DetailIdea> {
             e.printStackTrace();
             return GlobalFunction.dataGagalDisimpan("ADI004001", request);
         }
+    }
+
+    @Override
+    public ResponseEntity<Object> findByParam(Pageable pageable, String columnName, String value, HttpServletRequest request) {
+        Page<DetailIdea> page = null;
+        List<DetailIdea> list = null;
+        switch (columnName){
+            case "approvalDate":page=detailIdeaRepo.findByApprovalDate(pageable,value);break;
+            case "status":page=detailIdeaRepo.findByStatusContainingIgnoreCase(pageable,value);break;
+            default:page=detailIdeaRepo.findAll(pageable);
+        }
+        list = page.getContent();
+        if (list.isEmpty()){
+            return GlobalFunction.dataTidakDitemukan(request);
+        }
+        return transformPagination.transformObject(
+                new HashMap<>(),
+                convertToListDetailIdeaDTO(list),
+                page,
+                columnName,value
+        );
+    }
+
+    // Mendapatkan ID pengguna yang sedang login dari token JWT
+    public Long getCurrentUserId(HttpServletRequest request) {
+        String token = jwtUtil.extractToken(request); // Mengambil token dari header request
+        if (token != null) {
+            return jwtUtil.getUserIdFromToken(token); // Mendapatkan user ID dari token
+        }
+        return null;
     }
 
     // Convert DTO to entity

@@ -12,8 +12,12 @@ import java.util.Map;
 public interface IFile<G> {
 
       public ResponseEntity<Object> saveFile(G g, HttpServletRequest request, MultipartFile file, MultipartFile image);
+
       // Metode untuk mendapatkan semua entitas dengan pagination
       public ResponseEntity<Object> findAll(Pageable pageable, HttpServletRequest request);
+
+      // Metode untuk mencari entitas berdasarkan kolom dan nilai dengan pagination
+      public ResponseEntity<Object> findByParam(Pageable pageable, String columnName, String value, HttpServletRequest request);
 
 //    public ResponseEntity<Object> uploadDataExcel(MultipartFile multipartFile, HttpServletRequest request);//061-070
 //    public List<G> convertListWorkBookToListEntity(List<Map<String, String>> workBookData, Long userId);//071-080

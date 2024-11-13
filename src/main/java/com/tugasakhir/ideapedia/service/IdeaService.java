@@ -2,6 +2,7 @@ package com.tugasakhir.ideapedia.service;
 
 import com.tugasakhir.ideapedia.core.IFile;
 import com.tugasakhir.ideapedia.dto.response.RespIdeaDTO;
+import com.tugasakhir.ideapedia.dto.response.RespUserDTO;
 import com.tugasakhir.ideapedia.dto.validasi.ValIdeaDTO;
 import com.tugasakhir.ideapedia.model.*;
 import com.tugasakhir.ideapedia.repo.DetailIdeaRepo;
@@ -162,6 +163,42 @@ public class IdeaService implements IFile<Idea> {
                 convertToListRespIdeaDTO(list),
                 page,
                 null, null
+        );
+    }
+
+    @Override
+    public ResponseEntity<Object> findByParam(Pageable pageable, String columnName, String value, HttpServletRequest request) {
+        Page<Idea> page = null;
+        List<Idea> list = null;
+        try {
+            switch (columnName) {
+                case "judul":
+                    page = ideaRepo.findByJudulContainingIgnoreCase(pageable, value);
+                    break;
+                case "deskripsi":
+                    page = ideaRepo.findByDeskripsiContainingIgnoreCase(pageable, value);
+                    break;
+                case "userId": // TODO: Ingat ini disesuaikan
+                    Long userId = Long.parseLong(value); // Convert String to Long
+                    page = ideaRepo.findByUserIdOrderByIdDesc(pageable, userId);
+                    break;
+                default:
+                    page = ideaRepo.findAll(pageable);
+            }
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body("Invalid userId format");
+        }
+
+        list = page.getContent();
+        if (list.isEmpty()) {
+            return GlobalFunction.dataTidakDitemukan(request);
+        }
+
+        return transformPagination.transformObject(
+                new HashMap<>(),
+                convertToListRespIdeaDTO(list),
+                page,
+                columnName, value
         );
     }
 

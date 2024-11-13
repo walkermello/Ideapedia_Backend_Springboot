@@ -49,7 +49,6 @@ public class IdeaController {
         map.put("deskripsi", "deskripsi");
         map.put("file-image", "file-image");
         map.put("file-path", "file-path");
-
     }
 
     @PostMapping
@@ -73,6 +72,28 @@ public class IdeaController {
     public ResponseEntity<Object> getDefault(HttpServletRequest request) {
         Pageable pageable = PageRequest.of(0, 10, Sort.by("id"));//ASC
         return ideaService.findAll(pageable, request);
+    }
+
+    // jgn di taruh roll
+    @GetMapping("/{page}/{sort}/{sort-by}")
+    public ResponseEntity<Object> findByParam(
+            @PathVariable(value = "sort") String sort,
+            @PathVariable(value = "sort-by") String sortBy,
+            @PathVariable(value = "page") Integer page,
+            @RequestParam(value = "size") Integer size,
+            @RequestParam(value = "col") String column,
+            @RequestParam(value = "val") String value,
+            HttpServletRequest request
+    ) {
+        Pageable pageable = null;
+        sortBy = map.get(sortBy) == null ? "id" : map.get(sortBy).toString();
+        column = map.get(column) == null ? "id" : map.get(column).toString();
+        if ("asc".equals(sort)) {
+            pageable = PageRequest.of(page, size, Sort.by(sortBy));//ASC
+        } else {
+            pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());//DESC
+        }
+        return ideaService.findByParam(pageable, column, value, request);
     }
 
     @GetMapping("/download/{id}")
