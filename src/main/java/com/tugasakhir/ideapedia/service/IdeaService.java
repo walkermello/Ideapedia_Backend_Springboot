@@ -3,13 +3,12 @@ package com.tugasakhir.ideapedia.service;
 import com.tugasakhir.ideapedia.core.IFile;
 import com.tugasakhir.ideapedia.dto.response.RespIdeaDTO;
 import com.tugasakhir.ideapedia.dto.validasi.ValIdeaDTO;
-import com.tugasakhir.ideapedia.model.History;
-import com.tugasakhir.ideapedia.model.Idea;
-import com.tugasakhir.ideapedia.model.UnitKerja;
+import com.tugasakhir.ideapedia.model.*;
+import com.tugasakhir.ideapedia.repo.DetailIdeaRepo;
 import com.tugasakhir.ideapedia.repo.HistoryRepo;
 import com.tugasakhir.ideapedia.repo.IdeaRepo;
 import com.tugasakhir.ideapedia.repo.UserRepo;
-import com.tugasakhir.ideapedia.model.User;
+import com.tugasakhir.ideapedia.security.JwtUtility;
 import com.tugasakhir.ideapedia.util.GlobalFunction;
 import com.tugasakhir.ideapedia.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,6 +49,12 @@ public class IdeaService implements IFile<Idea> {
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private DetailIdeaRepo detailIdeaRepo;
+
+    @Autowired
+    private JwtUtility jwtUtil;  // Injeksi dependensi jwtUtil
 
     private final ModelMapper modelMapper = new ModelMapper();
     private TransformPagination transformPagination = new TransformPagination();
@@ -101,6 +106,12 @@ public class IdeaService implements IFile<Idea> {
 
             // Menyimpan data ide ke database
             ideaRepo.save(idea);
+
+            // Membuat instance DetailIdea dan set status serta ide
+            DetailIdea detailIdea = new DetailIdea();
+            detailIdea.setStatus("New Entry");
+            detailIdea.setIdea(idea);
+            detailIdeaRepo.save(detailIdea);
 
             // Menyimpan log download ke tabel history
             History history = new History();
@@ -183,7 +194,11 @@ public class IdeaService implements IFile<Idea> {
             // Mendapatkan pengguna yang sedang login
             Long currentUserId = getCurrentUserId(request);
             Optional<User> currentUser = userRepo.findById(currentUserId);
-            if (currentUser.isEmpty()) {
+            if (currentUser.isPresent()) {
+                idea.setUser(currentUser.get());
+
+
+            }else{
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             }
 
@@ -240,15 +255,15 @@ public class IdeaService implements IFile<Idea> {
         return fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
     }
 
-    // Mendapatkan ID pengguna yang sedang login
-    private Long getCurrentUserId(HttpServletRequest request) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (username == null || username.isEmpty()) {
-            throw new RuntimeException("User is not authenticated");
+    // Mendapatkan ID pengguna yang sedang login dari token JWT
+    public Long getCurrentUserId(HttpServletRequest request) {
+        String token = jwtUtil.extractToken(request); // Mengambil token dari header request
+        if (token != null) {
+            return jwtUtil.getUserIdFromToken(token); // Mendapatkan user ID dari token
         }
-        Optional<User> user = userRepo.findByUsername(username);
-        return user.map(User::getId).orElseThrow(() -> new RuntimeException("User not found"));
+        return null;
     }
+
 
     // Convert DTO to entity
     public Idea convertToEntity(ValIdeaDTO valIdeaDTO) {

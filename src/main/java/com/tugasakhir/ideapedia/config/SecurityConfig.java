@@ -13,7 +13,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())  // Menambahkan konfigurasi CORS dengan default
                 .csrf(csrf -> csrf.disable())    // Menonaktifkan CSRF
                 .authorizeHttpRequests(req -> req
-                        .requestMatchers("/auth/**", "/idea/**").permitAll() // Membuka akses ke endpoint /auth/**
+                        .requestMatchers("/auth/**", "/idea/**", "/user/**").permitAll() // Membuka akses ke endpoint /auth/**
                         .anyRequest().authenticated() // Menyaring semua request lainnya untuk memerlukan autentikasi
                 );
         return http.build();
