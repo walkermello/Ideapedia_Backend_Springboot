@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
+@CrossOrigin
 @RequestMapping("idea")
 public class IdeaController {
     @Autowired

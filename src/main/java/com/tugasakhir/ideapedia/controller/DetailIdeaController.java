@@ -15,6 +15,7 @@ import java.util.Optional;
 
 
 @RestController
+@CrossOrigin
 @RequestMapping("detail")
 public class DetailIdeaController {
 
