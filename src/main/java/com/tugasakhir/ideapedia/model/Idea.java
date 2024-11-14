@@ -18,13 +18,13 @@ public class Idea {
     private String deskripsi;
 
     @Column(name = "PengujiPertama")
-    private String pengujiPertama;
+    private Long pengujiPertama;
 
     @Column(name = "PengujiKedua")
-    private String pengujiKedua;
+    private Long pengujiKedua;
 
     @Column(name = "PengujiKetiga")
-    private String pengujiKetiga;
+    private Long pengujiKetiga;
 
     @Column(name = "Feedback")
     private String feedback;
@@ -77,27 +77,27 @@ public class Idea {
         this.deskripsi = deskripsi;
     }
 
-    public String getPengujiPertama() {
+    public Long getPengujiPertama() {
         return pengujiPertama;
     }
 
-    public void setPengujiPertama(String pengujiPertama) {
+    public void setPengujiPertama(Long pengujiPertama) {
         this.pengujiPertama = pengujiPertama;
     }
 
-    public String getPengujiKedua() {
+    public Long getPengujiKedua() {
         return pengujiKedua;
     }
 
-    public void setPengujiKedua(String pengujiKedua) {
+    public void setPengujiKedua(Long pengujiKedua) {
         this.pengujiKedua = pengujiKedua;
     }
 
-    public String getPengujiKetiga() {
+    public Long getPengujiKetiga() {
         return pengujiKetiga;
     }
 
-    public void setPengujiKetiga(String pengujiKetiga) {
+    public void setPengujiKetiga(Long pengujiKetiga) {
         this.pengujiKetiga = pengujiKetiga;
     }
 

@@ -1,6 +1,7 @@
 package com.tugasakhir.ideapedia.controller;
 
 import com.tugasakhir.ideapedia.dto.validasi.ValDetailIdeaDTO;
+import com.tugasakhir.ideapedia.dto.validasi.ValIdeaDTO;
 import com.tugasakhir.ideapedia.model.DetailIdea;
 import com.tugasakhir.ideapedia.model.Idea;
 import com.tugasakhir.ideapedia.repo.DetailIdeaRepo;
@@ -45,24 +46,31 @@ public class DetailIdeaController {
         map.clear();
         map.put("status", "status");
         map.put("approvalDate", "approvalDate");
+        map.put("feedback", "feedback");
+        map.put("pengujiSatu", "pengujiSatu");
+        map.put("pengujiDua", "pengujiDua");
+        map.put("PengujiTiga", "pengujiTiga");
     }
 
+    // Controller untuk approve ide dengan feedback dan penguji
     @PutMapping("/approve/{id}")
     public ResponseEntity<Object> approve(
             @PathVariable(value = "id") Long id,  // Mengambil id dari URL
+            @RequestBody ValIdeaDTO valIdeaDTO,  // Menerima body request untuk feedback dan penguji
             HttpServletRequest request) {
 
         // Memanggil approve method dari service dengan id dan request
-        return detailIdeaService.approve(id, request);
+        return detailIdeaService.approve(id, valIdeaDTO, request);
     }
 
+    // Controller untuk reject ide dengan komentar
     @PutMapping("/reject/{id}")
     public ResponseEntity<Object> reject(
             @PathVariable(value = "id") Long id,  // Mengambil id dari URL
             @RequestBody ValDetailIdeaDTO valDetailIdeaDTO,  // Menerima comment dari request body
             HttpServletRequest request) {
 
-        // Memanggil approve method dari service dengan id dan request
+        // Memanggil reject method dari service dengan id dan komentar
         return detailIdeaService.reject(id, valDetailIdeaDTO.getComments(), request);
     }
 

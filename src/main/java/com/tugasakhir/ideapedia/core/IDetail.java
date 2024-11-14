@@ -1,12 +1,13 @@
 package com.tugasakhir.ideapedia.core;
 
+import com.tugasakhir.ideapedia.dto.validasi.ValIdeaDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
 public interface IDetail<T>{
-    // Approve idea
-    public ResponseEntity<Object> approve(Long id, HttpServletRequest request); // 001-010 Tanpa file
+    // Approve idea dengan feedback dan penguji yang diambil dari request body
+    ResponseEntity<Object> approve(Long id, ValIdeaDTO valIdeaDTO, HttpServletRequest request); // 001-010 Dengan feedback dan penguji
 
     // Reject idea
     public ResponseEntity<Object> reject(Long id, String comment, HttpServletRequest request); // 001-010 Tanpa file

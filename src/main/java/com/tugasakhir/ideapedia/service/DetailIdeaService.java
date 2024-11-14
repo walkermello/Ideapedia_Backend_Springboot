@@ -5,6 +5,7 @@ import com.tugasakhir.ideapedia.core.IService;
 import com.tugasakhir.ideapedia.dto.response.RespDetailIdeaDTO;
 import com.tugasakhir.ideapedia.dto.response.RespUnitKerjaDTO;
 import com.tugasakhir.ideapedia.dto.validasi.ValDetailIdeaDTO;
+import com.tugasakhir.ideapedia.dto.validasi.ValIdeaDTO;
 import com.tugasakhir.ideapedia.model.DetailIdea;
 import com.tugasakhir.ideapedia.model.Idea;
 import com.tugasakhir.ideapedia.model.User;
@@ -47,42 +48,53 @@ public class DetailIdeaService implements IDetail<DetailIdea> {
     private IdeaRepo ideaRepo;
 
     @Autowired
-    private JwtUtility jwtUtil;  // Injeksi dependensi jwtUtil
+    private JwtUtility jwtUtil;
 
     private TransformPagination transformPagination = new TransformPagination();
     private ModelMapper modelMapper = new ModelMapper();
 
     @Override
     @Transactional
-    public ResponseEntity<Object> approve(Long id, HttpServletRequest request) {
+    public ResponseEntity<Object> approve(Long id, ValIdeaDTO valIdeaDTO, HttpServletRequest request) {
         try {
-            // Mencari DetailIdea berdasarkan ID
+            // Cari entitas DetailIdea berdasarkan ID
             Optional<DetailIdea> optionalDetailIdea = detailIdeaRepo.findById(id);
             if (!optionalDetailIdea.isPresent()) {
-                return GlobalFunction.dataTidakDitemukan(request);
+                return GlobalFunction.dataTidakDitemukan(request); // Mengembalikan respons jika data tidak ditemukan
             }
 
             DetailIdea detailIdea = optionalDetailIdea.get();
 
-            // Set data yang sudah disiapkan untuk update
+            // Set tanggal persetujuan dan status
             Date approvalDate = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
             detailIdea.setApprovalDate(approvalDate);
             detailIdea.setStatus("Approved");
             detailIdea.setComments("Approved");
 
-            // Mengambil user yang menyetujui dari request
+            // Mendapatkan pengguna yang mengirim request
             Long currentUserId = getCurrentUserId(request);
             Optional<User> currentUser = userRepo.findById(currentUserId);
-            if (currentUser.isPresent()) {
-                detailIdea.setApprovedBy(currentUser.get());
-            } else {
+            if (currentUser.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User tidak ditemukan.");
             }
+            detailIdea.setApprovedBy(currentUser.get());
+
+            // Ambil feedback dan penguji dari request body (ValIdeaDTO)
+            String feedback = valIdeaDTO.getFeedback();
+            Long pengujiPertama = valIdeaDTO.getPengujiPertama();
+            Long pengujiKedua = valIdeaDTO.getPengujiKedua();
+            Long pengujiKetiga = valIdeaDTO.getPengujiKetiga();
+
+            // Set feedback dan penguji pada entitas Idea yang terkait
+            detailIdea.getIdea().setFeedback(feedback);
+            detailIdea.getIdea().setPengujiPertama(pengujiPertama);
+            detailIdea.getIdea().setPengujiKedua(pengujiKedua);
+            detailIdea.getIdea().setPengujiKetiga(pengujiKetiga);
 
             // Simpan perubahan ke database
             detailIdeaRepo.save(detailIdea);
 
-            // Kembalikan response dengan data yang telah diupdate
+            // Siapkan response data
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("id", detailIdea.getId());
             responseData.put("approvalDate", detailIdea.getApprovalDate());
@@ -103,7 +115,6 @@ public class DetailIdeaService implements IDetail<DetailIdea> {
     @Transactional
     public ResponseEntity<Object> reject(Long id, String comment, HttpServletRequest request) {
         try {
-            // Mencari DetailIdea berdasarkan ID
             Optional<DetailIdea> optionalDetailIdea = detailIdeaRepo.findById(id);
             if (!optionalDetailIdea.isPresent()) {
                 return GlobalFunction.dataTidakDitemukan(request);
@@ -111,26 +122,24 @@ public class DetailIdeaService implements IDetail<DetailIdea> {
 
             DetailIdea detailIdea = optionalDetailIdea.get();
 
-            // Set data yang sudah disiapkan untuk update
+            // Set rejection data
             Date rejectedDate = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
             detailIdea.setRejectedDate(rejectedDate);
             detailIdea.setStatus("Rejected");
-
-            // Mengambil user yang menyetujui dari request
-            Long currentUserId = getCurrentUserId(request);
-            Optional<User> currentUser = userRepo.findById(currentUserId);
-            if (currentUser.isPresent()) {
-                detailIdea.setApprovedBy(currentUser.get());
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User tidak ditemukan.");
-            }
-
             detailIdea.setComments(comment);
 
-            // Simpan perubahan ke database
+            // Get current user from token
+            Long currentUserId = getCurrentUserId(request);
+            Optional<User> currentUser = userRepo.findById(currentUserId);
+            if (currentUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User tidak ditemukan.");
+            }
+            detailIdea.setApprovedBy(currentUser.get());
+
+            // Save rejection changes
             detailIdeaRepo.save(detailIdea);
 
-            // Kembalikan response dengan data yang telah diupdate
+            // Prepare response data
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("id", detailIdea.getId());
             responseData.put("approvalDate", detailIdea.getApprovalDate());
@@ -147,54 +156,22 @@ public class DetailIdeaService implements IDetail<DetailIdea> {
         }
     }
 
-    @Override
-    public ResponseEntity<Object> findByParam(Pageable pageable, String columnName, String value, HttpServletRequest request) {
-        Page<DetailIdea> page = null;
-        List<DetailIdea> list = null;
-        switch (columnName){
-            case "approvalDate":page=detailIdeaRepo.findByApprovalDate(pageable,value);break;
-            case "status":page=detailIdeaRepo.findByStatusContainingIgnoreCase(pageable,value);break;
-            default:page=detailIdeaRepo.findAll(pageable);
-        }
-        list = page.getContent();
-        if (list.isEmpty()){
-            return GlobalFunction.dataTidakDitemukan(request);
-        }
-        return transformPagination.transformObject(
-                new HashMap<>(),
-                convertToListDetailIdeaDTO(list),
-                page,
-                columnName,value
-        );
-    }
-
-    // Mendapatkan ID pengguna yang sedang login dari token yang sudah dienkripsi
+    // Utility method to get current user's ID from the token
     public Long getCurrentUserId(HttpServletRequest request) {
-        // Ambil token dari request (sesuaikan sesuai nama header yang digunakan di frontend)
         String token = request.getHeader("Authorization");
-
         if (token == null || token.trim().isEmpty()) {
             System.out.println("Token not found in request headers.");
             return null;
         }
 
         try {
-            System.out.println("Received Token: " + token);
-
-            // Memisahkan "Bearer" dan token, jika ada kata "Bearer"
             if (token.startsWith("Bearer ")) {
-                token = token.substring(7);  // Menghapus "Bearer " (7 karakter)
+                token = token.substring(7); // Remove "Bearer " part
             }
 
-            System.out.println("Token after removing 'Bearer': " + token);
-
-//             Setelah token didekripsi, gunakan `jwtUtil` untuk mengambil user ID
-            Long userId = jwtUtil.getUserIdFromToken(token);  // tidak perlu di decrypt dulu karena nanti di jwtUtil ada proses dcrypt
-            System.out.println("Extracted User ID: " + userId);
-
-            return userId;
+            return jwtUtil.getUserIdFromToken(token);
         } catch (Exception e) {
-            System.out.println("Error while processing token: " + e.getMessage());
+            System.out.println("Error processing token: " + e.getMessage());
             return null;
         }
     }
@@ -209,4 +186,24 @@ public class DetailIdeaService implements IDetail<DetailIdea> {
         return modelMapper.map(detailIdeas, new TypeToken<List<RespDetailIdeaDTO>>(){}.getType());
     }
 
+    @Override
+    public ResponseEntity<Object> findByParam(Pageable pageable, String columnName, String value, HttpServletRequest request) {
+        Page<DetailIdea> page;
+        switch (columnName) {
+            case "approvalDate":
+                page = detailIdeaRepo.findByApprovalDate(pageable, value);
+                break;
+            case "status":
+                page = detailIdeaRepo.findByStatusContainingIgnoreCase(pageable, value);
+                break;
+            default:
+                page = detailIdeaRepo.findAll(pageable);
+        }
+        List<DetailIdea> list = page.getContent();
+        if (list.isEmpty()) {
+            return GlobalFunction.dataTidakDitemukan(request);
+        }
+        return transformPagination.transformObject(new HashMap<>(), convertToListDetailIdeaDTO(list), page, columnName, value);
+    }
 }
+

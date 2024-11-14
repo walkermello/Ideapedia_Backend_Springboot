@@ -4,23 +4,15 @@ import jakarta.validation.constraints.*;
 
 public class ValIdeaDTO {
 
-    @NotNull
-    @NotBlank
-    @NotEmpty
-    @Size(min = 5, max = 100, message = "Judul harus antara 5 dan 100 karakter.")
     private String judul;
 
-    @NotNull
-    @NotBlank
-    @NotEmpty
-    @Size(min = 10, max = 1000, message = "Deskripsi harus antara 10 dan 1000 karakter.")
     private String deskripsi;
 
-    private String pengujiPertama;
+    private Long pengujiPertama;
 
-    private String pengujiKedua;
+    private Long pengujiKedua;
 
-    private String pengujiKetiga;
+    private Long pengujiKetiga;
 
     private String feedback;
 
@@ -49,27 +41,27 @@ public class ValIdeaDTO {
         this.deskripsi = deskripsi;
     }
 
-    public String getPengujiPertama() {
+    public Long getPengujiPertama() {
         return pengujiPertama;
     }
 
-    public void setPengujiPertama(String pengujiPertama) {
+    public void setPengujiPertama(Long pengujiPertama) {
         this.pengujiPertama = pengujiPertama;
     }
 
-    public String getPengujiKedua() {
+    public Long getPengujiKedua() {
         return pengujiKedua;
     }
 
-    public void setPengujiKedua(String pengujiKedua) {
+    public void setPengujiKedua(Long pengujiKedua) {
         this.pengujiKedua = pengujiKedua;
     }
 
-    public String getPengujiKetiga() {
+    public Long getPengujiKetiga() {
         return pengujiKetiga;
     }
 
-    public void setPengujiKetiga(String pengujiKetiga) {
+    public void setPengujiKetiga(Long pengujiKetiga) {
         this.pengujiKetiga = pengujiKetiga;
     }
 
