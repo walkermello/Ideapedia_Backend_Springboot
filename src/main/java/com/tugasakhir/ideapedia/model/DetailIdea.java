@@ -18,6 +18,10 @@ public class DetailIdea {
     @Temporal(TemporalType.TIMESTAMP)
     private Date approvalDate;
 
+    @Column(name = "RejectedDate")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date rejectedDate;
+
     @Column(name = "Comments")
     private String comments;
 
@@ -92,5 +96,13 @@ public class DetailIdea {
 
     public void setApprovedBy(User approvedBy) {
         this.approvedBy = approvedBy;
+    }
+
+    public Date getRejectedDate() {
+        return rejectedDate;
+    }
+
+    public void setRejectedDate(Date rejectedDate) {
+        this.rejectedDate = rejectedDate;
     }
 }

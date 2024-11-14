@@ -6,31 +6,33 @@ import java.util.Date;
 
 public class ValDetailIdeaDTO {
 
-    @NotNull
-    @NotBlank
-    @NotEmpty
     private Long ideaId;
 
-    @NotNull
-    @NotBlank
-    @NotEmpty
     private Long approvedById;
 
-    @NotNull
-    @NotBlank
-    @NotEmpty
     private String status;
 
-    @NotNull
-    @NotBlank
-    @NotEmpty
     private Date approvalDate;
 
-    @NotNull
-    @NotBlank
-    @NotEmpty
-    @Size(max = 255, message = "Komentar maksimal 255 karakter")
+    private Date rejectedDate;
+
+    public Date getRejectedDate() {
+        return rejectedDate;
+    }
+
+    public void setRejectedDate(Date rejectedDate) {
+        this.rejectedDate = rejectedDate;
+    }
+
     private String comments;
+
+    // Konstruktor tanpa parameter (untuk framework seperti Jackson)
+    public ValDetailIdeaDTO() {}
+
+    // Konstruktor yang hanya menerima ideaId
+    public ValDetailIdeaDTO(Long ideaId) {
+        this.ideaId = ideaId;
+    }
 
     // Getters and Setters
     public Long getIdeaId() {

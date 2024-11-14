@@ -1,11 +1,13 @@
 package com.tugasakhir.ideapedia.controller;
 
+import com.tugasakhir.ideapedia.dto.validasi.ValDetailIdeaDTO;
 import com.tugasakhir.ideapedia.model.DetailIdea;
 import com.tugasakhir.ideapedia.model.Idea;
 import com.tugasakhir.ideapedia.repo.DetailIdeaRepo;
 import com.tugasakhir.ideapedia.repo.IdeaRepo;
 import com.tugasakhir.ideapedia.service.DetailIdeaService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -45,20 +47,23 @@ public class DetailIdeaController {
         map.put("approvalDate", "approvalDate");
     }
 
-    @PostMapping("/{ideaId}")
-    public ResponseEntity<Object> approve(@PathVariable Long ideaId, HttpServletRequest request) {
-        DetailIdea detailIdea = new DetailIdea();
+    @PutMapping("/approve/{id}")
+    public ResponseEntity<Object> approve(
+            @PathVariable(value = "id") Long id,  // Mengambil id dari URL
+            HttpServletRequest request) {
 
-        // Ambil Idea dari database berdasarkan ID
-        Optional<Idea> optionalIdea = ideaRepo.findById(ideaId); // Pastikan Anda memiliki repository untuk Idea
-        if (optionalIdea.isPresent()) {
-            Idea idea = optionalIdea.get();
-            detailIdea.setIdea(idea);
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Idea dengan ID " + ideaId + " tidak ditemukan.");
-        }
+        // Memanggil approve method dari service dengan id dan request
+        return detailIdeaService.approve(id, request);
+    }
 
-        return detailIdeaService.approve(detailIdea, request);
+    @PutMapping("/reject/{id}")
+    public ResponseEntity<Object> reject(
+            @PathVariable(value = "id") Long id,  // Mengambil id dari URL
+            @RequestBody ValDetailIdeaDTO valDetailIdeaDTO,  // Menerima comment dari request body
+            HttpServletRequest request) {
+
+        // Memanggil approve method dari service dengan id dan request
+        return detailIdeaService.reject(id, valDetailIdeaDTO.getComments(), request);
     }
 
     // jgn di taruh roll
