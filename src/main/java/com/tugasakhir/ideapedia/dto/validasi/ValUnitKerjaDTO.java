@@ -8,10 +8,6 @@ public class ValUnitKerjaDTO {
 
     private Long id;
 
-    @NotNull
-    @NotBlank
-    @NotEmpty
-    //@Size(max = 100, message = "Unit name must not exceed 100 characters")
     private String unitName;
 
     private boolean isAdmin;

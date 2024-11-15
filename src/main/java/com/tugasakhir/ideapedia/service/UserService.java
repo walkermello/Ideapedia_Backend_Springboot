@@ -7,6 +7,7 @@ import com.tugasakhir.ideapedia.dto.validasi.ValUserDTO;
 import com.tugasakhir.ideapedia.model.User;
 import com.tugasakhir.ideapedia.repo.UserRepo;
 import com.tugasakhir.ideapedia.security.BcryptImpl;
+import com.tugasakhir.ideapedia.security.JwtUtility;
 import com.tugasakhir.ideapedia.util.GlobalFunction;
 import com.tugasakhir.ideapedia.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,25 +33,12 @@ public class UserService implements IService<User> {
     @Autowired
     private UserRepo userRepo;
 
+    @Autowired
+    private JwtUtility jwtUtil;
+
     private TransformPagination transformPagination = new TransformPagination();
     private ModelMapper modelMapper = new ModelMapper();
     private StringBuilder sBuild = new StringBuilder();
-
-    public Long getCurrentUserId(HttpServletRequest request) {
-        // Mengambil username dari security context
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String username;
-
-        if (principal instanceof UserDetails) {
-            username = ((UserDetails) principal).getUsername();
-        } else {
-            username = principal.toString();
-        }
-
-        // Cari user berdasarkan username
-        Optional<User> user = userRepo.findByUsername(username);
-        return user.map(User::getId).orElse(null);
-    }
 
     @Override
     @Transactional
@@ -62,10 +50,12 @@ public class UserService implements IService<User> {
             // Set waktu pembuatan sebagai timestamp saat ini
             user.setCreatedAt(LocalDateTime.now());
 
-            // Set createdBy berdasarkan ID user yang melakukan request
-            // Misalnya, Anda bisa mendapatkan ID user dari sesi atau token
-            Long createdByUserId = getCurrentUserId(request); // Implementasikan metode ini sesuai kebutuhan
-            user.setCreatedBy(createdByUserId);
+            Long currentUserId = getCurrentUserId(request);
+            Optional<User> currentUser = userRepo.findById(currentUserId);
+            if (currentUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User tidak ditemukan.");
+            }
+            user.setCreatedBy(currentUser.get().getId());
 
             // Simpan data user
             userRepo.save(user);
@@ -173,6 +163,26 @@ public class UserService implements IService<User> {
                 page,
                 columnName,value
         );
+    }
+
+    // Utility method to get current user's ID from the token
+    public Long getCurrentUserId(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token == null || token.trim().isEmpty()) {
+            System.out.println("Token not found in request headers.");
+            return null;
+        }
+
+        try {
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7); // Remove "Bearer " part
+            }
+
+            return jwtUtil.getUserIdFromToken(token);
+        } catch (Exception e) {
+            System.out.println("Error processing token: " + e.getMessage());
+            return null;
+        }
     }
 
     public User convertToEntity(ValUserDTO valUserDTO){
