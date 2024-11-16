@@ -28,6 +28,17 @@ public class User {
     @Column(name = "NoHp")
     private String noHp;
 
+    @Column(name = "ImgProfile")
+    private String imgProfile;
+
+    public String getImgProfile() {
+        return imgProfile;
+    }
+
+    public void setImgProfile(String imgProfile) {
+        this.imgProfile = imgProfile;
+    }
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "IDUnitKerja")
     private UnitKerja unitKerja;

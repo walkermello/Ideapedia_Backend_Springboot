@@ -2,7 +2,6 @@ package com.tugasakhir.ideapedia.service;
 
 import com.tugasakhir.ideapedia.core.IFile;
 import com.tugasakhir.ideapedia.dto.response.RespIdeaDTO;
-import com.tugasakhir.ideapedia.dto.response.RespUserDTO;
 import com.tugasakhir.ideapedia.dto.validasi.ValIdeaDTO;
 import com.tugasakhir.ideapedia.model.*;
 import com.tugasakhir.ideapedia.repo.DetailIdeaRepo;
@@ -14,10 +13,18 @@ import com.tugasakhir.ideapedia.util.GlobalFunction;
 import com.tugasakhir.ideapedia.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.apache.poi.xslf.usermodel.XMLSlideShow;
+import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
@@ -26,17 +33,24 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.util.HashMap;
+import java.util.Map;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.nio.file.*;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.net.URL;
+
 
 @Service
 @Transactional
@@ -55,6 +69,12 @@ public class IdeaService implements IFile<Idea> {
     private DetailIdeaRepo detailIdeaRepo;
 
     @Autowired
+    private FileService fileService;
+
+    @Autowired
+    private PowerPointToPdfConverter powerPointToPdfConverter;
+
+    @Autowired
     private JwtUtility jwtUtil;  // Injeksi dependensi jwtUtil
 
     private final ModelMapper modelMapper = new ModelMapper();
@@ -71,50 +91,67 @@ public class IdeaService implements IFile<Idea> {
 
     @Override
     public ResponseEntity<Object> saveFile(Idea idea, HttpServletRequest request, MultipartFile file, MultipartFile image) {
+        String fileUrl = null;
+
         try {
-            if (idea == null || idea.getJudul() == null || idea.getDeskripsi() == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Judul dan deskripsi ide tidak boleh kosong.");
+            // Convert PPT/PPTX file to PDF if necessary
+            File pdfFile = null;
+
+            if (file.getOriginalFilename().endsWith(".ppt") || file.getOriginalFilename().endsWith(".pptx")) {
+                // Save the MultipartFile to a temporary file
+                File tempFile = File.createTempFile("upload", file.getOriginalFilename());
+                file.transferTo(tempFile);
+
+                // Convert the PPT/PPTX file to PDF
+                pdfFile = PowerPointToPdfConverter.convertPPTToPDF(tempFile);
+
+                // Delete the temporary PPT file after conversion
+                tempFile.delete();
+
+                // Upload the PDF file to Cloudinary
+                try {
+                    if (pdfFile != null && pdfFile.exists() && pdfFile.length() > 0) {
+                        fileUrl = fileService.uploadFile(pdfFile);  // Upload the converted PDF file
+                    } else {
+                        throw new IOException("File PDF tidak ditemukan atau kosong.");
+                    }
+                } finally {
+                    if (pdfFile != null && pdfFile.exists()) {
+                        pdfFile.delete(); // Delete the temporary PDF file after upload
+                    }
+                }
+            } else {
+                // Regular file upload for non-PPT files
+                fileUrl = fileService.uploadFile(file);  // Upload the file directly
             }
 
-            if (file == null || file.isEmpty() || !isValidFile(file)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File ide harus berupa .ppt, .pptx, atau .pdf.");
-            }
-
-            if (image == null || image.isEmpty() || !isValidImage(image)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File gambar harus berupa .jpg, .jpeg, atau .png.");
-            }
-
-            // Menyimpan file dan gambar
-            String fileName = saveFileToStorage(file, fileStoragePath);
+            // Upload the image file
             String imageFileName = saveFileToStorage(image, imageStoragePath);
 
-            // Menyimpan informasi file dan gambar ke dalam objek idea
-            idea.setFileName(fileName);
-            idea.setFilePath(fileStoragePath + fileName);
+            // Set file names and paths in the idea object
+            idea.setFileName(file.getOriginalFilename());
+            idea.setFilePath(fileUrl);
             idea.setFileImage(imageStoragePath + imageFileName);
 
-            // Mendapatkan user berdasarkan ID pengguna yang sedang login
+            // Get the current user ID from the request
             Long currentUserId = getCurrentUserId(request);
             Optional<User> currentUser = userRepo.findById(currentUserId);
-            if (currentUser.isPresent()) {
-                idea.setUser(currentUser.get());
-            } else {
+
+            if (!currentUser.isPresent()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User tidak ditemukan.");
             }
 
-            // Set timestamp
+            idea.setUser(currentUser.get());
             idea.setCreatedAt(LocalDateTime.now());
 
-            // Menyimpan data ide ke database
+            // Save the idea to the database
             ideaRepo.save(idea);
 
-            // Membuat instance DetailIdea dan set status serta ide
             DetailIdea detailIdea = new DetailIdea();
             detailIdea.setStatus("New Entry");
             detailIdea.setIdea(idea);
             detailIdeaRepo.save(detailIdea);
 
-            // Menyimpan log download ke tabel history
             History history = new History();
             history.setUser(currentUser.get());
             history.setIdea(idea);
@@ -123,7 +160,6 @@ public class IdeaService implements IFile<Idea> {
             history.setCreatedAt(LocalDateTime.now());
             historyRepo.save(history);
 
-            // Menyiapkan data respons
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("id", idea.getId());
             responseData.put("judul", idea.getJudul());
@@ -143,11 +179,14 @@ public class IdeaService implements IFile<Idea> {
             );
 
         } catch (IOException e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Gagal menyimpan file: " + e.getMessage());
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Gagal menyimpan ide: " + e.getMessage());
         }
     }
+
 
     @Override
     public ResponseEntity<Object> findAll(Pageable pageable, HttpServletRequest request) {
@@ -261,7 +300,94 @@ public class IdeaService implements IFile<Idea> {
         }
     }
 
-    // Fungsi untuk menyimpan file ke penyimpanan
+    public ResponseEntity<Resource> getImage(Long ideaId) {
+        try {
+            // Mendapatkan objek Idea berdasarkan ID
+            Optional<Idea> optionalIdea = ideaRepo.findById(ideaId);
+            if (optionalIdea.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            Idea idea = optionalIdea.get();
+
+            // Mendapatkan path gambar (URL dari Cloudinary)
+            String imagePath = idea.getFileImage();
+            if (imagePath == null || imagePath.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+
+//            // Membuat resource dari URL gambar
+//            URL url = new URL(imagePath);  // Menggunakan URL langsung dari Cloudinary
+//            Resource resource = new UrlResource(url);
+
+            // Membuat resource dari path gambar
+            Path path = FileSystems.getDefault().getPath(imagePath);
+            Resource resource = new UrlResource(path.toUri());
+            if (!resource.exists()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+
+            // Mengatur header respons untuk mendukung pengambilan gambar
+            String contentDisposition = "inline; filename=\"" + resource.getFilename() + "\"";
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)  // Sesuaikan dengan tipe media jika gambar dalam format lain
+                    .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
+                    .body(resource);
+
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    public ResponseEntity<Resource> previewFile(Long id) {
+        try {
+            // Mendapatkan data Idea berdasarkan ID
+            Optional<Idea> ideaOpt = ideaRepo.findById(id);
+            if (ideaOpt.isEmpty()) {
+                return ResponseEntity.notFound().build(); // File tidak ditemukan
+            }
+
+            Idea idea = ideaOpt.get();
+            String fileUrl = idea.getFilePath(); // URL file di Cloudinary atau remote storage
+            String fileName = idea.getFileName();
+
+            // Memeriksa aksesibilitas file menggunakan URLConnection
+            HttpURLConnection connection = (HttpURLConnection) new URL(fileUrl).openConnection();
+            connection.setRequestMethod("HEAD"); // Menggunakan metode HEAD untuk memeriksa status file
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                // Menambahkan log jika file tidak dapat diakses
+                System.out.println("File tidak dapat diakses, response code: " + responseCode);
+                return ResponseEntity.notFound().build(); // File tidak dapat diakses
+            }
+
+            // Jika file dapat diakses, ambil Resource untuk file tersebut
+            Resource resource = new UrlResource(fileUrl);
+            if (!resource.exists() || !resource.isReadable()) {
+                // Menambahkan log jika file tidak dapat dibaca
+                System.out.println("File tidak ditemukan atau tidak dapat dibaca: " + fileUrl);
+                return ResponseEntity.notFound().build(); // File tidak ditemukan
+            }
+
+            // Menyiapkan headers untuk inline preview
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"");
+
+            // Return file sebagai respons dengan header untuk preview
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(resource);
+
+        } catch (Exception e) {
+            // Log error dan tangani pengecualian lainnya
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build(); // Kesalahan internal server
+        }
+    }
+
+    // Fungsi untuk menyimpan file ke penyimpanan local
     private String saveFileToStorage(MultipartFile file, String storagePath) throws IOException {
         // Menyusun path lengkap dan memastikan direktori ada
         Path uploadPath = Paths.get(storagePath);
@@ -275,22 +401,20 @@ public class IdeaService implements IFile<Idea> {
         return fileName;
     }
 
-    // Mengecek apakah ekstensi file valid
-    private boolean isValidFile(MultipartFile file) {
-        String extension = getFileExtension(file.getOriginalFilename());
-        return ALLOWED_FILE_EXTENSIONS.contains(extension.toLowerCase());
-    }
-
-    // Mengecek apakah ekstensi gambar valid
-    private boolean isValidImage(MultipartFile image) {
-        String extension = getFileExtension(image.getOriginalFilename());
-        return ALLOWED_IMAGE_EXTENSIONS.contains(extension.toLowerCase());
-    }
 
     // Mengambil ekstensi file
-    private String getFileExtension(String fileName) {
-        return fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
-    }
+//    private String getFileExtension(String fileName) {
+//        if (fileName == null || fileName.isEmpty()) {
+//            return null;  // Return null jika fileName kosong
+//        }
+//
+//        int dotIndex = fileName.lastIndexOf('.');
+//        if (dotIndex == -1) {
+//            return null;  // Return null jika tidak ada titik (tidak ada ekstensi)
+//        }
+//
+//        return fileName.substring(dotIndex + 1).toLowerCase();  // Mengembalikan ekstensi file setelah titik
+//    }
 
     // Mendapatkan ID pengguna yang sedang login dari token JWT
     public Long getCurrentUserId(HttpServletRequest request) {

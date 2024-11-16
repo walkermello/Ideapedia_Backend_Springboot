@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -104,4 +105,17 @@ public class IdeaController {
         // Memanggil service untuk mengunduh file berdasarkan ID dan tipe file
         return ideaService.downloadFile(id, fileType, null);
     }
+
+    @GetMapping("/image/{id}")
+    public ResponseEntity<Resource> getIdeaImage(@PathVariable("id") Long ideaId) {
+        // Panggil service untuk mengambil gambar ide berdasarkan ID
+        return ideaService.getImage(ideaId);
+    }
+
+    @GetMapping("/preview/{id}")
+    public ResponseEntity<Resource> previewFile(@PathVariable Long id) {
+        // Panggil service untuk mengembalikan preview file
+        return ideaService.previewFile(id);
+    }
+
 }

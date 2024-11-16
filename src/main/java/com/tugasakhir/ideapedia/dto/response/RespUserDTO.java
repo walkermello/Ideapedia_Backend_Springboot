@@ -7,7 +7,16 @@ public class RespUserDTO {
     private String email;
     private String password;
     private String noHp;
+    private String imgProfile;
     private RespUnitKerjaDTO unitKerja;
+
+    public String getImgProfile() {
+        return imgProfile;
+    }
+
+    public void setImgProfile(String imgProfile) {
+        this.imgProfile = imgProfile;
+    }
 
     // Getter and Setter for id
     public Long getId() {

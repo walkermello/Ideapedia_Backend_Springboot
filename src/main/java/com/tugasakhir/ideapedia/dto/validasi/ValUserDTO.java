@@ -7,31 +7,34 @@ import jakarta.validation.constraints.Pattern;
 
 public class ValUserDTO {
 
-    @NotBlank(message = "Username tidak boleh kosong.")
     //@Pattern(regexp = "^([a-z\\.]{8,16})$",message = "Format Username: Huruf kecil dan numeric saja, min 8 max 16 karakter, contoh: paulch123")
     private String username;
 
-    @NotBlank(message = "NIP tidak boleh kosong.")
     //@Pattern(regexp = "^[0-9]{18}$",message = "Format NIP tidak valid, harus 18 digit angka.")
     private String nip;
 
-    @NotBlank(message = "Email tidak boleh kosong.")
-    @Email(message = "Format email tidak valid")
     private String email;
 
-    @NotBlank(message = "Password tidak boleh kosong.")
     //@Pattern(regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[_#\\-$])[\\w].{8,15}$",message = "Password harus memenuhi syarat: minimal 1 angka, 1 huruf kecil, 1 huruf besar, 1 spesial karakter (_ \"Underscore\", - \"Hyphen\", # \"Hash\", atau $ \"Dollar\"). Panjang 8-15 karakter.")
     private String password;
 
-    @NotBlank(message = "Nomor HP tidak boleh kosong.")
     //@Pattern(regexp = "^(62|\\+62|0)8[0-9]{9,13}$",message = "Format No HP Tidak Valid, min 9 max 13 digit setelah angka 8, contoh: (0/62/+62)81111111")
     @JsonProperty("no-hp")
     private String noHp;
 
-    @NotNull(message = "ID Unit Kerja tidak boleh kosong.")
     private ValUnitKerjaDTO unitKerja;
 
+    private String imgProfile;
+
     // Getters and Setters
+
+    public String getImgProfile() {
+        return imgProfile;
+    }
+
+    public void setImgProfile(String imgProfile) {
+        this.imgProfile = imgProfile;
+    }
 
     public String getUsername() {
         return username;
