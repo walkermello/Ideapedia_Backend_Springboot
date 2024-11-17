@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -99,5 +100,11 @@ public class UserController {
             pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());//DESC
         }
         return userService.findByParam(pageable, column, value, request);
+    }
+
+    @GetMapping("/image/{id}")
+    public ResponseEntity<Resource> getUserImage(@PathVariable("id") Long userId) {
+        // Panggil service untuk mengambil gambar ide berdasarkan ID
+        return userService.getImage(userId);
     }
 }

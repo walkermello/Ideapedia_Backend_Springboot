@@ -1,6 +1,7 @@
 package com.tugasakhir.ideapedia.service;
 
 import com.tugasakhir.ideapedia.core.IFile;
+import com.tugasakhir.ideapedia.dto.response.RespFileLinkDTO;
 import com.tugasakhir.ideapedia.dto.response.RespIdeaDTO;
 import com.tugasakhir.ideapedia.dto.validasi.ValIdeaDTO;
 import com.tugasakhir.ideapedia.model.*;
@@ -382,6 +383,36 @@ public class IdeaService implements IFile<Idea> {
 
         } catch (Exception e) {
             // Log error dan tangani pengecualian lainnya
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build(); // Kesalahan internal server
+        }
+    }
+
+    public ResponseEntity<?> previewFileLink(Long id) {
+        try {
+            // Mendapatkan data Idea berdasarkan ID
+            Optional<Idea> ideaOpt = ideaRepo.findById(id);
+            if (ideaOpt.isEmpty()) {
+                return ResponseEntity.notFound().build(); // File tidak ditemukan
+            }
+
+            Idea idea = ideaOpt.get();
+            String fileUrl = idea.getFilePath(); // URL file di Cloudinary atau remote storage
+
+            // Periksa apakah URL valid (opsional)
+            HttpURLConnection connection = (HttpURLConnection) new URL(fileUrl).openConnection();
+            connection.setRequestMethod("HEAD");
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                System.out.println("File tidak dapat diakses, response code: " + responseCode);
+                return ResponseEntity.notFound().build(); // File tidak dapat diakses
+            }
+
+            // Kembalikan URL file dalam format JSON
+            return ResponseEntity.ok(new RespFileLinkDTO(fileUrl)); // Mengembalikan URL sebagai JSON
+
+        } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build(); // Kesalahan internal server
         }

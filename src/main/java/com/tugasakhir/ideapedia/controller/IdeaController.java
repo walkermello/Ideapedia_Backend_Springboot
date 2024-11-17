@@ -1,32 +1,19 @@
 package com.tugasakhir.ideapedia.controller;
 
-import com.tugasakhir.ideapedia.dto.validasi.ValIdeaDTO;
-import com.tugasakhir.ideapedia.dto.validasi.ValUnitKerjaDTO;
 import com.tugasakhir.ideapedia.model.Idea;
 import com.tugasakhir.ideapedia.repo.IdeaRepo;
-import com.tugasakhir.ideapedia.repo.UnitKerjaRepo;
 import com.tugasakhir.ideapedia.service.IdeaService;
-import com.tugasakhir.ideapedia.service.UnitKerjaService;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @CrossOrigin
@@ -116,6 +103,11 @@ public class IdeaController {
     public ResponseEntity<Resource> previewFile(@PathVariable Long id) {
         // Panggil service untuk mengembalikan preview file
         return ideaService.previewFile(id);
+    }
+
+    @GetMapping("/preview-link/{id}")
+    public ResponseEntity<?> previewFileLink(@PathVariable Long id) {
+        return ideaService.previewFileLink(id);
     }
 
 }

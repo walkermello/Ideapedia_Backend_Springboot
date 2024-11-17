@@ -4,6 +4,7 @@ import com.tugasakhir.ideapedia.core.IFile;
 import com.tugasakhir.ideapedia.core.IService;
 import com.tugasakhir.ideapedia.dto.response.RespUserDTO;
 import com.tugasakhir.ideapedia.dto.validasi.ValUserDTO;
+import com.tugasakhir.ideapedia.model.Idea;
 import com.tugasakhir.ideapedia.model.User;
 import com.tugasakhir.ideapedia.repo.UserRepo;
 import com.tugasakhir.ideapedia.security.BcryptImpl;
@@ -16,13 +17,21 @@ import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -56,6 +65,7 @@ public class UserService implements IService<User> {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User tidak ditemukan.");
             }
             user.setCreatedBy(currentUser.get().getId());
+            user.setImgProfile("D:/ideapedia/uploads/images/img.png");
 
             // Simpan data user
             userRepo.save(user);
@@ -164,6 +174,43 @@ public class UserService implements IService<User> {
                 columnName,value
         );
     }
+
+    public ResponseEntity<Resource> getImage(Long userId) {
+        try {
+            // Mendapatkan objek User berdasarkan ID
+            Optional<User> optionalUser = userRepo.findById(userId);
+            if (optionalUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            User user = optionalUser.get();
+
+            // Mendapatkan path gambar (dari database, yang disimpan secara lokal)
+            String imagePath = user.getImgProfile();
+            if (imagePath == null || imagePath.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+
+            // Membuat path dan resource dari file lokal
+            Path path = FileSystems.getDefault().getPath(imagePath);
+            Resource resource = new UrlResource(path.toUri());
+
+            if (!resource.exists()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+
+            // Mengatur header respons untuk mendukung pengambilan gambar
+            String contentDisposition = "inline; filename=\"" + resource.getFilename() + "\"";
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)  // Sesuaikan dengan tipe media jika gambar dalam format lain (misalnya PNG)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
+                    .body(resource);
+
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
 
     // Utility method to get current user's ID from the token
     public Long getCurrentUserId(HttpServletRequest request) {
