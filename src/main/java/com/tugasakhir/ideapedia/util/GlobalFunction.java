@@ -62,6 +62,12 @@ public class GlobalFunction {
                         null,"G-01-002",request);
     }
 
+    public static ResponseEntity<Object> unhideIdea(HttpServletRequest request){
+        return new ResponseHandler().
+                generateResponse("DATA BERHASIL DIUNHIDE",
+                        HttpStatus.OK,
+                        null,"G-01-002",request);
+    }
 
     //Global FUnction For Unit Kerja
     public static ResponseEntity<Object> dataUnitKerjaBerhasilDisimpan(HttpServletRequest request, Map<String, Object> data) {

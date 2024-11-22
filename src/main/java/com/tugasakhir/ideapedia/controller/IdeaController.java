@@ -84,6 +84,16 @@ public class IdeaController {
         return ideaService.findByParam(pageable, column, value, request);
     }
 
+    @PostMapping("/hide-idea/{id}")
+    public ResponseEntity<Object> hideIdea(@PathVariable(value = "id") Long id, HttpServletRequest request) {
+        return ideaService.hideIdea(id, request);
+    }
+
+    @PostMapping("/unhide-idea/{id}")
+    public ResponseEntity<Object> unhideIdea(@PathVariable(value = "id") Long id, HttpServletRequest request) {
+        return ideaService.unhideIdea(id, request);
+    }
+
     @GetMapping("/download/{id}")
     public ResponseEntity<Resource> downloadFile(
             @PathVariable Long id,

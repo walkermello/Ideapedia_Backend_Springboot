@@ -1,10 +1,8 @@
 package com.tugasakhir.ideapedia.service;
 
-import com.tugasakhir.ideapedia.core.IFile;
 import com.tugasakhir.ideapedia.core.IService;
 import com.tugasakhir.ideapedia.dto.response.RespUserDTO;
 import com.tugasakhir.ideapedia.dto.validasi.ValUserDTO;
-import com.tugasakhir.ideapedia.model.Idea;
 import com.tugasakhir.ideapedia.model.User;
 import com.tugasakhir.ideapedia.repo.UserRepo;
 import com.tugasakhir.ideapedia.security.BcryptImpl;
@@ -12,7 +10,6 @@ import com.tugasakhir.ideapedia.security.JwtUtility;
 import com.tugasakhir.ideapedia.util.GlobalFunction;
 import com.tugasakhir.ideapedia.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
@@ -25,8 +22,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -65,6 +60,7 @@ public class UserService implements IService<User> {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User tidak ditemukan.");
             }
             user.setCreatedBy(currentUser.get().getId());
+            user.setStatus("Activated");
             user.setImgProfile("D:/ideapedia/uploads/images/img.png");
 
             // Simpan data user
@@ -117,7 +113,10 @@ public class UserService implements IService<User> {
             if(!optionalUser.isPresent()) {
                 return GlobalFunction.dataTidakDitemukan(request);
             }
-            userRepo.deleteById(id);
+            // Mengubah status menjadi 'Hidden'
+            User user = optionalUser.get();
+            user.setStatus("Deleted");
+            userRepo.save(user);
         }catch (Exception e){
             return GlobalFunction.dataGagalDihapus("FEAUT004021",request);//021-030
         }
@@ -161,6 +160,7 @@ public class UserService implements IService<User> {
             case "nip":page=userRepo.findByNipContainingIgnoreCase(pageable,value);break;
             case "noHp":page=userRepo.findByNoHpContainingIgnoreCase(pageable,value);break;
             case "userName":page=userRepo.findByUsernameContainingIgnoreCase(pageable,value);break;
+            case "status":page=userRepo.findByStatusContainingIgnoreCase(pageable,value);break;
             default:page=userRepo.findAll(pageable);
         }
         list = page.getContent();

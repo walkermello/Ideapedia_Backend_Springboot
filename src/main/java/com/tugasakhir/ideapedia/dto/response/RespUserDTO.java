@@ -8,7 +8,16 @@ public class RespUserDTO {
     private String password;
     private String noHp;
     private String imgProfile;
+    private String status;
     private RespUnitKerjaDTO unitKerja;
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
     public String getImgProfile() {
         return imgProfile;

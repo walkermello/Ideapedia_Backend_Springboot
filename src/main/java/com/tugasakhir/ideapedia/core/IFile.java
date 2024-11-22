@@ -13,6 +13,9 @@ public interface IFile<G> {
 
       public ResponseEntity<Object> saveFile(G g, HttpServletRequest request, MultipartFile file, MultipartFile image);
 
+      public ResponseEntity<Object> hideIdea(Long id, HttpServletRequest request);
+
+      public ResponseEntity<Object> unhideIdea(Long id, HttpServletRequest request);
       // Metode untuk mendapatkan semua entitas dengan pagination
       public ResponseEntity<Object> findAll(Pageable pageable, HttpServletRequest request);
 

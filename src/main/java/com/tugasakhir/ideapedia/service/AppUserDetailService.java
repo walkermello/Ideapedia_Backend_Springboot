@@ -56,6 +56,7 @@ public class AppUserDetailService implements UserDetailsService {
         mapForClaims.put("ml",nextUser.getEmail());//payload
         mapForClaims.put("pw",nextUser.getPassword());//payload
         mapForClaims.put("pn",nextUser.getNoHp());//payload
+        mapForClaims.put("pp",nextUser.getImgProfile());
         String token = jwtUtility.generateToken(userDetails,mapForClaims);
         // Create response map
         Map<String, Object> m = new HashMap<>();
@@ -69,6 +70,7 @@ public class AppUserDetailService implements UserDetailsService {
         userData.put("email", nextUser.getEmail());
         userData.put("noHp", nextUser.getNoHp());
         userData.put("unit_kerja", nextUser.getUnitKerja());
+        userData.put("img_profile", nextUser.getImgProfile());
 
         m.put("user", userData); // Add user details to response map
 

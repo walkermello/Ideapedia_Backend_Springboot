@@ -14,13 +14,6 @@ import com.tugasakhir.ideapedia.util.GlobalFunction;
 import com.tugasakhir.ideapedia.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
-import org.apache.poi.xslf.usermodel.XMLSlideShow;
-import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -416,6 +409,50 @@ public class IdeaService implements IFile<Idea> {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build(); // Kesalahan internal server
         }
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<Object> hideIdea(Long ideaId, HttpServletRequest request) {
+        try {
+            // Mencari DetailIdea berdasarkan ID Idea
+            Optional<DetailIdea> optionalDetailIdea = detailIdeaRepo.findByIdeaId(ideaId);
+            if (!optionalDetailIdea.isPresent()) {
+                return GlobalFunction.dataTidakDitemukan(request);
+            }
+
+            // Mengubah status menjadi 'Hidden'
+            DetailIdea detailIdea = optionalDetailIdea.get();
+            detailIdea.setStatus("Hidden");
+            detailIdeaRepo.save(detailIdea);
+
+        } catch (Exception e) {
+            return GlobalFunction.dataGagalDihapus("FEAUT004021", request); //021-030
+        }
+
+        return GlobalFunction.dataBerhasilDihapus(request);
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<Object> unhideIdea(Long ideaId, HttpServletRequest request) {
+        try {
+            // Mencari DetailIdea berdasarkan ID Idea
+            Optional<DetailIdea> optionalDetailIdea = detailIdeaRepo.findByIdeaId(ideaId);
+            if (!optionalDetailIdea.isPresent()) {
+                return GlobalFunction.dataTidakDitemukan(request);
+            }
+
+            // Mengubah status menjadi 'Hidden'
+            DetailIdea detailIdea = optionalDetailIdea.get();
+            detailIdea.setStatus("Approved");
+            detailIdeaRepo.save(detailIdea);
+
+        } catch (Exception e) {
+            return GlobalFunction.dataGagalDihapus("FEAUT004021", request); //021-030
+        }
+
+        return GlobalFunction.unhideIdea(request);
     }
 
     // Fungsi untuk menyimpan file ke penyimpanan local

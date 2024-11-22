@@ -42,6 +42,7 @@ public class UserController {
         map.put("nip", "nip");
         map.put("mail", "email");
         map.put("hp", "noHp");
+        map.put("status", "status");
     }
 
     @GetMapping
@@ -70,7 +71,7 @@ public class UserController {
         return userService.update(aLong, userService.convertToEntity(valUserDTO), request);
     }
 
-    @DeleteMapping("/{id}")
+    @PostMapping("/delete/{id}")
     public ResponseEntity<Object> delete(@PathVariable(value = "id") Long id, HttpServletRequest request) {
         return userService.delete(id, request);
     }

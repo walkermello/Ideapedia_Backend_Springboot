@@ -22,4 +22,6 @@ public interface DetailIdeaRepo extends JpaRepository<DetailIdea, Long> {
 
     // Find detail idea by status containing (ignore case)
     Page<DetailIdea> findByStatusContainingIgnoreCase(Pageable pageable, String value);
+
+    Optional<DetailIdea> findByIdeaId(Long ideaId);
 }

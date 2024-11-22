@@ -25,6 +25,9 @@ public interface UserRepo extends JpaRepository<User, Long> {
         // Finds users where the username contains the given value, ignoring case
         Page<User> findByUsernameContainingIgnoreCase(Pageable pageable, String value);
 
+        // Finds users where the status contains the given value, ignoring case
+        Page<User> findByStatusContainingIgnoreCase(Pageable pageable, String value);
+
         // Finds users by username
         Optional<User> findByUsername(String value);
 }
