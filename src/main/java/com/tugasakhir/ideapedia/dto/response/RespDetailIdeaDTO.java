@@ -1,11 +1,12 @@
 package com.tugasakhir.ideapedia.dto.response;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 public class RespDetailIdeaDTO {
     private Long id;
     private String status;
-    private Date approvalDate;
+    private LocalDateTime approvalDate;
     private String comments;
     private RespIdeaDTO idea;
     private RespUserDTO user;
@@ -26,11 +27,11 @@ public class RespDetailIdeaDTO {
         this.status = status;
     }
 
-    public Date getApprovalDate() {
+    public LocalDateTime getApprovalDate() {
         return approvalDate;
     }
 
-    public void setApprovalDate(Date approvalDate) {
+    public void setApprovalDate(LocalDateTime approvalDate) {
         this.approvalDate = approvalDate;
     }
 

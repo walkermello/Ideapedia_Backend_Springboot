@@ -97,11 +97,13 @@ public class IdeaController {
     @GetMapping("/download/{id}")
     public ResponseEntity<Resource> downloadFile(
             @PathVariable Long id,
-            @RequestParam(value = "fileType", defaultValue = "file") String fileType) {
+            @RequestParam(value = "fileType", defaultValue = "file") String fileType,
+            HttpServletRequest request) { // Inject HttpServletRequest
 
         // Memanggil service untuk mengunduh file berdasarkan ID dan tipe file
-        return ideaService.downloadFile(id, fileType, null);
+        return ideaService.downloadFile(id, fileType, request); // Pass the HttpServletRequest here
     }
+
 
     @GetMapping("/image/{id}")
     public ResponseEntity<Resource> getIdeaImage(@PathVariable("id") Long ideaId) {

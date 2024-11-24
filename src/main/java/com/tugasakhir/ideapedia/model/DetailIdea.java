@@ -1,6 +1,8 @@
 package com.tugasakhir.ideapedia.model;
 
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -16,11 +18,11 @@ public class DetailIdea {
 
     @Column(name = "ApprovalDate")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date approvalDate;
+    private LocalDateTime approvalDate;
 
     @Column(name = "RejectedDate")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date rejectedDate;
+    private LocalDateTime rejectedDate;
 
     @Column(name = "Comments")
     private String comments;
@@ -40,7 +42,7 @@ public class DetailIdea {
     }
 
     // Konstruktor dengan parameter untuk status, approvalDate, dan comments
-    public DetailIdea(Long ideaId, String status, Date approvalDate, String comments, Idea idea, User approvedBy) {
+    public DetailIdea(Long ideaId, String status, LocalDateTime approvalDate, String comments, Idea idea, User approvedBy) {
         this.status = status;
         this.approvalDate = approvalDate;
         this.comments = comments;
@@ -65,11 +67,11 @@ public class DetailIdea {
         this.status = status;
     }
 
-    public Date getApprovalDate() {
+    public LocalDateTime getApprovalDate() {
         return approvalDate;
     }
 
-    public void setApprovalDate(Date approvalDate) {
+    public void setApprovalDate(LocalDateTime approvalDate) {
         this.approvalDate = approvalDate;
     }
 
@@ -98,11 +100,11 @@ public class DetailIdea {
         this.approvedBy = approvedBy;
     }
 
-    public Date getRejectedDate() {
+    public LocalDateTime getRejectedDate() {
         return rejectedDate;
     }
 
-    public void setRejectedDate(Date rejectedDate) {
+    public void setRejectedDate(LocalDateTime rejectedDate) {
         this.rejectedDate = rejectedDate;
     }
 }

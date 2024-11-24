@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,23 +36,26 @@ public class FileService{
             throw new IOException("File is empty");
         }
 
+        // Simpan MultipartFile ke file sementara
+        File tempFile = File.createTempFile("upload-", file.getOriginalFilename());
         try {
-            // Mengonversi MultipartFile menjadi FileInputStream
-            FileInputStream fileInputStream = (FileInputStream) file.getInputStream();
+            // Tuliskan byte file ke file sementara
+            file.transferTo(tempFile);
 
             // Siapkan parameter upload untuk Cloudinary
             Map<String, Object> uploadParams = new HashMap<>();
             uploadParams.put("resource_type", "auto");
 
-            // Upload file ke Cloudinary
-            Map uploadResult = cloudinary.uploader().upload(fileInputStream, uploadParams);
+            // Upload file sementara ke Cloudinary
+            Map uploadResult = cloudinary.uploader().upload(tempFile, uploadParams);
 
             // Kembalikan URL file yang diupload
             return (String) uploadResult.get("secure_url");
-
-        } catch (IOException e) {
-            // Tangani error dengan memberikan pesan tambahan
-            throw new IOException("Error uploading file to Cloudinary: " + e.getMessage(), e);
+        } finally {
+            // Hapus file sementara setelah selesai
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
         }
     }
 

@@ -31,6 +31,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 
@@ -66,8 +67,8 @@ public class DetailIdeaService implements IDetail<DetailIdea> {
             DetailIdea detailIdea = optionalDetailIdea.get();
 
             // Set tanggal persetujuan dan status
-            Date approvalDate = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
-            detailIdea.setApprovalDate(approvalDate);
+            //Date approvalDate = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
+            detailIdea.setApprovalDate(LocalDateTime.now());
             detailIdea.setStatus("Approved");
             detailIdea.setComments("Approved");
 
@@ -122,9 +123,7 @@ public class DetailIdeaService implements IDetail<DetailIdea> {
 
             DetailIdea detailIdea = optionalDetailIdea.get();
 
-            // Set rejection data
-            Date rejectedDate = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
-            detailIdea.setRejectedDate(rejectedDate);
+            detailIdea.setRejectedDate(LocalDateTime.now());
             detailIdea.setStatus("Rejected");
             detailIdea.setComments(comment);
 

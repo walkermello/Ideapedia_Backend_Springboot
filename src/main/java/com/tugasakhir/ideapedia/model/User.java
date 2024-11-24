@@ -7,8 +7,6 @@ import java.time.LocalDateTime;
 @Table(name = "MstUser")
 public class User {
 
-
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -33,22 +31,6 @@ public class User {
 
     @Column(name = "Status")
     private String status;
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getImgProfile() {
-        return imgProfile;
-    }
-
-    public void setImgProfile(String imgProfile) {
-        this.imgProfile = imgProfile;
-    }
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "IDUnitKerja")
@@ -154,5 +136,21 @@ public class User {
 
     public void setModifiedBy(Long modifiedBy) {
         this.modifiedBy = modifiedBy;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getImgProfile() {
+        return imgProfile;
+    }
+
+    public void setImgProfile(String imgProfile) {
+        this.imgProfile = imgProfile;
     }
 }

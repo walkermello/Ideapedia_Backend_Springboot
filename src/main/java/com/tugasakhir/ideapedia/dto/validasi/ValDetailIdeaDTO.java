@@ -2,6 +2,7 @@ package com.tugasakhir.ideapedia.dto.validasi;
 
 import jakarta.validation.constraints.*;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 public class ValDetailIdeaDTO {
@@ -12,15 +13,15 @@ public class ValDetailIdeaDTO {
 
     private String status;
 
-    private Date approvalDate;
+    private LocalDateTime approvalDate;
 
-    private Date rejectedDate;
+    private LocalDateTime rejectedDate;
 
-    public Date getRejectedDate() {
+    public LocalDateTime getRejectedDate() {
         return rejectedDate;
     }
 
-    public void setRejectedDate(Date rejectedDate) {
+    public void setRejectedDate(LocalDateTime rejectedDate) {
         this.rejectedDate = rejectedDate;
     }
 
@@ -59,11 +60,11 @@ public class ValDetailIdeaDTO {
         this.status = status;
     }
 
-    public Date getApprovalDate() {
+    public LocalDateTime getApprovalDate() {
         return approvalDate;
     }
 
-    public void setApprovalDate(Date approvalDate) {
+    public void setApprovalDate(LocalDateTime approvalDate) {
         this.approvalDate = approvalDate;
     }
 

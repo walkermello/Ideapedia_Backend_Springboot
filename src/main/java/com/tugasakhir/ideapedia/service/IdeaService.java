@@ -1,5 +1,6 @@
 package com.tugasakhir.ideapedia.service;
 
+import com.cloudinary.utils.ObjectUtils;
 import com.tugasakhir.ideapedia.core.IFile;
 import com.tugasakhir.ideapedia.dto.response.RespFileLinkDTO;
 import com.tugasakhir.ideapedia.dto.response.RespIdeaDTO;
@@ -34,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.imageio.ImageIO;
@@ -119,13 +121,20 @@ public class IdeaService implements IFile<Idea> {
                 fileUrl = fileService.uploadFile(file);  // Upload the file directly
             }
 
+            // Upload gambar ke Cloudinary (opsional jika file gambar ada)
+            String imageUrl = null;
+            if (image != null && !image.isEmpty()) {
+                imageUrl = fileService.uploadFile(image);
+            }
+
             // Upload the image file
-            String imageFileName = saveFileToStorage(image, imageStoragePath);
+            // String imageFileName = saveFileToStorage(image, imageStoragePath);
 
             // Set file names and paths in the idea object
             idea.setFileName(file.getOriginalFilename());
             idea.setFilePath(fileUrl);
-            idea.setFileImage(imageStoragePath + imageFileName);
+            idea.setFileImage(imageUrl); // Use Cloudinary URL for image
+//            idea.setFileImage(imageStoragePath + imageFileName); //ini untuk lokal storage
 
             // Get the current user ID from the request
             Long currentUserId = getCurrentUserId(request);
@@ -181,7 +190,6 @@ public class IdeaService implements IFile<Idea> {
         }
     }
 
-
     @Override
     public ResponseEntity<Object> findAll(Pageable pageable, HttpServletRequest request) {
         Page<Idea> page = ideaRepo.findAll(pageable);
@@ -236,6 +244,10 @@ public class IdeaService implements IFile<Idea> {
     }
 
     public ResponseEntity<Resource> downloadFile(Long ideaId, String fileType, HttpServletRequest request) {
+        if (request == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+
         try {
             // Mendapatkan objek Idea berdasarkan ID
             Optional<Idea> optionalIdea = ideaRepo.findById(ideaId);
@@ -248,46 +260,60 @@ public class IdeaService implements IFile<Idea> {
             String filePath;
             if ("file".equalsIgnoreCase(fileType)) {
                 filePath = idea.getFilePath();
-            } else if ("image".equalsIgnoreCase(fileType)) {
-                filePath = idea.getFileImage();
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             }
 
-            // Membuat resource dari path file
-            Path path = FileSystems.getDefault().getPath(filePath);
-            Resource resource = new UrlResource(path.toUri());
-            if (!resource.exists()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
+            //            // Membuat resource dari path file local
+//            Path path = FileSystems.getDefault().getPath(filePath);
+//            Resource resource = new UrlResource(path.toUri());
+//            if (!resource.exists()) {
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+//            }
 
-            // Mendapatkan pengguna yang sedang login
-            Long currentUserId = getCurrentUserId(request);
-            Optional<User> currentUser = userRepo.findById(currentUserId);
-            if (currentUser.isPresent()) {
-                idea.setUser(currentUser.get());
+            // Menangani jika file adalah URL eksternal (Cloudinary)
+            if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
+                try {
+                    // Membuat URL resource dari file URL
+                    URL url = new URL(filePath);
+                    Resource resource = new UrlResource(url.toURI());
 
+                    if (!resource.exists()) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    }
 
-            }else{
+                    // Mendapatkan pengguna yang sedang login
+                    Long currentUserId = getCurrentUserId(request);
+                    Optional<User> currentUser = userRepo.findById(currentUserId);
+                    if (currentUser.isPresent()) {
+                        idea.setUser(currentUser.get());
+                    } else {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    }
+
+                    // Menyimpan log download ke tabel history
+                    History history = new History();
+                    history.setUser(currentUser.get());
+                    history.setIdea(idea);
+                    history.setAction("Download");
+                    history.setDetailAction("Download file: " + idea.getJudul());
+                    history.setCreatedAt(LocalDateTime.now());
+                    historyRepo.save(history);
+
+                    // Mengatur header respons untuk mendukung download
+                    String contentDisposition = "attachment; filename=\"" + resource.getFilename() + "\"";
+
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
+                            .body(resource);
+
+                } catch (URISyntaxException e) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                }
+            } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             }
-
-            // Menyimpan log download ke tabel history
-            History history = new History();
-            history.setUser(currentUser.get());
-            history.setIdea(idea);
-            history.setAction("Download");
-            history.setDetailAction("Download file: " + idea.getJudul());
-            history.setCreatedAt(LocalDateTime.now());
-            historyRepo.save(history);
-
-            // Mengatur header respons untuk mendukung download
-            String contentDisposition = "attachment; filename=\"" + path.getFileName().toString() + "\"";
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
-                    .body(resource);
 
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -309,16 +335,19 @@ public class IdeaService implements IFile<Idea> {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
 
-//            // Membuat resource dari URL gambar
-//            URL url = new URL(imagePath);  // Menggunakan URL langsung dari Cloudinary
-//            Resource resource = new UrlResource(url);
-
-            // Membuat resource dari path gambar
-            Path path = FileSystems.getDefault().getPath(imagePath);
-            Resource resource = new UrlResource(path.toUri());
+            // Membuat resource dari URL gambar
+            URL url = new URL(imagePath);  // Menggunakan URL langsung dari Cloudinary
+            Resource resource = new UrlResource(url);
             if (!resource.exists()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
+
+//            // Membuat resource dari path gambar untuk local
+//            Path path = FileSystems.getDefault().getPath(imagePath);
+//            Resource resource = new UrlResource(path.toUri());
+//            if (!resource.exists()) {
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+//            }
 
             // Mengatur header respons untuk mendukung pengambilan gambar
             String contentDisposition = "inline; filename=\"" + resource.getFilename() + "\"";
