@@ -10,6 +10,7 @@ import com.tugasakhir.ideapedia.model.User;
 import com.tugasakhir.ideapedia.repo.BookmarkRepo;
 import com.tugasakhir.ideapedia.repo.IdeaRepo;
 import com.tugasakhir.ideapedia.repo.UserRepo;
+import com.tugasakhir.ideapedia.security.JwtUtility;
 import com.tugasakhir.ideapedia.util.GlobalFunction;
 import com.tugasakhir.ideapedia.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,7 +34,7 @@ import java.util.Optional;
 
 @Service
 @Transactional
-public class BookmarkService implements IBookmark<Bookmark> {
+public class    BookmarkService implements IBookmark<Bookmark> {
 
     @Autowired
     private BookmarkRepo bookmarkRepo;
@@ -44,22 +45,34 @@ public class BookmarkService implements IBookmark<Bookmark> {
     @Autowired
     private IdeaRepo ideaRepo;
 
+    @Autowired
+    private JwtUtility jwtUtil;  // Injeksi dependensi jwtUtil
+
     private TransformPagination transformPagination = new TransformPagination();
     private ModelMapper modelMapper = new ModelMapper();
     private StringBuilder sBuild = new StringBuilder();
 
+//    public Long getCurrentUserId(HttpServletRequest request) {
+//        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+//        String username;
+//
+//        if (principal instanceof UserDetails) {
+//            username = ((UserDetails) principal).getUsername();
+//        } else {
+//            username = principal.toString();
+//        }
+//
+//        Optional<User> user = userRepo.findByUsername(username);
+//        return user.map(User::getId).orElse(null);
+//    }
+
+    // Mendapatkan ID pengguna yang sedang login dari token JWT
     public Long getCurrentUserId(HttpServletRequest request) {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String username;
-
-        if (principal instanceof UserDetails) {
-            username = ((UserDetails) principal).getUsername();
-        } else {
-            username = principal.toString();
+        String token = jwtUtil.extractToken(request); // Mengambil token dari header request
+        if (token != null) {
+            return jwtUtil.getUserIdFromToken(token); // Mendapatkan user ID dari token
         }
-
-        Optional<User> user = userRepo.findByUsername(username);
-        return user.map(User::getId).orElse(null);
+        return null;
     }
 
     @Override
@@ -67,8 +80,14 @@ public class BookmarkService implements IBookmark<Bookmark> {
     public ResponseEntity<Object> bookmark(Bookmark bookmark, HttpServletRequest request) {
         try {
             bookmark.setCreatedAt(LocalDateTime.now());
-            Long createdByUserId = getCurrentUserId(request);
 
+            // Pastikan ID pengguna valid
+            Long createdByUserId = getCurrentUserId(request);
+            if (createdByUserId == null || createdByUserId <= 0) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User tidak ditemukan atau tidak valid.");
+            }
+
+            // Cari pengguna berdasarkan ID
             Optional<User> userOptional = userRepo.findById(createdByUserId);
             if (userOptional.isPresent()) {
                 bookmark.setUser(userOptional.get());
@@ -76,18 +95,25 @@ public class BookmarkService implements IBookmark<Bookmark> {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User tidak ditemukan.");
             }
 
+            // Simpan bookmark
             bookmarkRepo.save(bookmark);
 
+            // Siapkan response data
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("id", bookmark.getId());
             responseData.put("createdAt", bookmark.getCreatedAt());
             responseData.put("idea", bookmark.getIdea());
             responseData.put("user", bookmark.getUser());
 
+            // Kembalikan respons berhasil
             return GlobalFunction.dataBookmarkBerhasilDisimpan(request, responseData);
 
         } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
+            // Tangani kesalahan dengan lebih rinci
+            System.out.println("Error: " + e.getMessage());  // Di lingkungan produksi, log di sistem log
+            e.printStackTrace();  // Lebih baik tampilkan stack trace untuk debug
+
+            // Kembalikan respons gagal dengan kode kesalahan yang lebih informatif
             return GlobalFunction.dataGagalDisimpan("FEAUT004001", request);
         }
     }
