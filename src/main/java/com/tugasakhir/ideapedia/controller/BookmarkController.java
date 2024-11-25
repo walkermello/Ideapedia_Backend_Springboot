@@ -47,4 +47,10 @@ public class BookmarkController {
 
         return bookmarkService.bookmark(bookmark, request);
     }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<Object> getByUserId(@PathVariable Long userId, HttpServletRequest request) {
+        return bookmarkService.findByUserId(userId, request); // Pass request for token extraction
+    }
+
 }

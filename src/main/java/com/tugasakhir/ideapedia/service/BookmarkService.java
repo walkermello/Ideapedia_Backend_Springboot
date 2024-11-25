@@ -2,6 +2,7 @@ package com.tugasakhir.ideapedia.service;
 
 import com.tugasakhir.ideapedia.core.IBookmark;
 import com.tugasakhir.ideapedia.core.IService;
+import com.tugasakhir.ideapedia.dto.response.RespBookmarkDTO;
 import com.tugasakhir.ideapedia.dto.response.RespUserDTO;
 import com.tugasakhir.ideapedia.dto.validasi.ValUserDTO;
 import com.tugasakhir.ideapedia.model.Bookmark;
@@ -31,10 +32,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
-public class    BookmarkService implements IBookmark<Bookmark> {
+public class BookmarkService implements IBookmark<Bookmark> {
 
     @Autowired
     private BookmarkRepo bookmarkRepo;
@@ -65,15 +67,6 @@ public class    BookmarkService implements IBookmark<Bookmark> {
 //        Optional<User> user = userRepo.findByUsername(username);
 //        return user.map(User::getId).orElse(null);
 //    }
-
-    // Mendapatkan ID pengguna yang sedang login dari token JWT
-    public Long getCurrentUserId(HttpServletRequest request) {
-        String token = jwtUtil.extractToken(request); // Mengambil token dari header request
-        if (token != null) {
-            return jwtUtil.getUserIdFromToken(token); // Mendapatkan user ID dari token
-        }
-        return null;
-    }
 
     @Override
     @Transactional
@@ -131,6 +124,45 @@ public class    BookmarkService implements IBookmark<Bookmark> {
             return GlobalFunction.dataGagalDihapus("FEAUT004021", request);
         }
         return GlobalFunction.dataBerhasilDihapus(request);
+    }
+
+    // Menemukan seluruh bookmark berdasarkan userId
+    @Override
+    public ResponseEntity<Object> findByUserId(Long userId, HttpServletRequest request) {
+        Long currentUserId = getCurrentUserId(request);
+        Optional<User> currentUser = userRepo.findById(currentUserId);
+        if (currentUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User tidak ditemukan.");
+        }
+
+        List<Bookmark> bookmarks = bookmarkRepo.findByUserId(currentUserId);
+
+        if (bookmarks.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("No bookmarks found for user with id " + userId);
+        }
+
+        return ResponseEntity.ok(bookmarks);
+    }
+
+    // Utility method to get current user's ID from the token
+    public Long getCurrentUserId(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token == null || token.trim().isEmpty()) {
+            System.out.println("Token not found in request headers.");
+            return null;
+        }
+
+        try {
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7); // Remove "Bearer " part
+            }
+
+            return jwtUtil.getUserIdFromToken(token);
+        } catch (Exception e) {
+            System.out.println("Error processing token: " + e.getMessage());
+            return null;
+        }
     }
 
     public User convertToEntity(ValUserDTO valUserDTO) {

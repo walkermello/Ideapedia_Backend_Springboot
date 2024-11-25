@@ -10,4 +10,7 @@ public interface IBookmark<T> {
 
     // Metode untuk menghapus entitas berdasarkan ID
     public ResponseEntity<Object> unbookmark(Long id, HttpServletRequest request);
+
+    // Metode untuk menghapus entitas berdasarkan ID
+    public ResponseEntity<Object> findByUserId(Long id, HttpServletRequest request);
 }

@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface BookmarkRepo extends JpaRepository<Bookmark, Long> {
@@ -13,8 +14,8 @@ public interface BookmarkRepo extends JpaRepository<Bookmark, Long> {
     Optional<Bookmark> findTopByOrderByIdDesc();
 
     // Find Bookmark by Idea ID (sorted using Pageable)
-    Page<DetailIdea> findByIdeaId(Pageable pageable, String value);
+    Page<Bookmark> findByIdeaId(Pageable pageable, String value);
 
     // Find Bookmark by User ID (sorted using Pageable)
-    Page<DetailIdea> findByUserId(Pageable pageable, String value);
+    List<Bookmark> findByUserId(Long userId);
 }
