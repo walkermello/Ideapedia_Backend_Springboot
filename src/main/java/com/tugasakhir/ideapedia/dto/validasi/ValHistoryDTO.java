@@ -9,31 +9,14 @@ import java.time.LocalDateTime;
 
 public class ValHistoryDTO {
 
-    @NotNull
-    @NotBlank
-    @NotEmpty
     private User user;
 
-    @NotNull
-    @NotBlank
-    @NotEmpty
     private Idea idea;
 
-    @NotBlank
-    @NotBlank
-    @NotEmpty
-    @Size(max = 50, message = "Action tidak boleh lebih dari 50 karakter")
     private String action;
 
-    @NotNull
-    @NotBlank
-    @NotEmpty
-    @Size(max = 255, message = "DetailAction tidak boleh lebih dari 255 karakter")
     private String detailAction;
 
-    @NotNull
-    @NotBlank
-    @NotEmpty
     private LocalDateTime createdAt;
 
     // Getters and Setters
