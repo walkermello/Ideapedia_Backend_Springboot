@@ -18,12 +18,16 @@
         @Value("${cloudinary.api-secret}")
         private String apiSecret;
 
+        @Value("${cloudinary.timeout}") // Default 60 detik, bisa diubah sesuai kebutuhan
+        private int timeout;
+
         @Bean
         public Cloudinary cloudinary() {
             return new Cloudinary(ObjectUtils.asMap(
                     "cloud_name", cloudName,
                     "api_key", apiKey,
-                    "api_secret", apiSecret
+                    "api_secret", apiSecret,
+                    "timeout", timeout
             ));
         }
     }
